@@ -12,7 +12,7 @@ def generate_random_points(num=100, k=3, var=3, mean_dist=5):
     mean = [[mean_dist * i + mean_x_noise[i], mean_dist * i + mean_y_noise[i]] for i in range(k)]
     var_x_noise = np.random.normal(0, rand_range, k)
     var_y_noise = np.random.normal(0, rand_range, k)
-    cov = [[[var + var_x_noise[i], 0], [0, var + var_y_noise[i]]] for i in range(k)]
+    cov = [[[var + abs(var_x_noise[i]), 0], [0, var + abs(var_y_noise[i])]] for i in range(k)]
     points = np.concatenate([np.random.multivariate_normal(mean[i], cov[i], num) for i in range(k)], axis=0)
     return [tuple(point) for point in points]
 

@@ -6,20 +6,29 @@ import matplotlib.pyplot as plt
 import mincemeat
 import time
 
-PORT = 2000
+PORT = 2003
 
 
 def map_fn(k, v):
     words = v.split(" ")
-    # print("map", (words[0], words[2]), words[1])
     yield (words[0], words[2]), words[1]
 
 
 def reduce_fn(k, v):
     import itertools
     pairs = list(itertools.combinations(v, r=2))
-    # print("reduce", pairs)
     return pairs
+
+
+def map_fn_2(k, v):
+    first, second = v
+    if first > second:
+        second, first = first, second
+    yield (first, second), 1
+
+
+def reduce_fn_2(k, v):
+    return sum(v)
 
 
 def run_workers(n=1):
@@ -66,15 +75,13 @@ if __name__ == '__main__':
     run_workers(n=CONCURRENCY)
     results = run_server(s)
 
-    pairs_count = {}
-    for pairs in results.values():
-        for pair in pairs:
-            reverse_pair = (pair[1], pair[0])
-            if pair not in pairs_count and reverse_pair not in pairs_count:
-                pairs_count[pair] = 0
-            pairs_count[pair] += 1
+    s.datasource = dict(enumerate([item for sub in results.values() for item in sub]))
+    s.mapfn = map_fn_2
+    s.reducefn = reduce_fn_2
+    run_workers(n=CONCURRENCY)
+    results = run_server(s)
 
-    answer = [pair for (pair, count) in pairs_count.items() if count > 1]
+    answer = ', '.join(['%s-%s (%s)' % (pair[0], pair[1], count) for (pair, count) in results.items() if count > 1])
 
     print("Finished. Elapsed Time: %s secs.\nPairs: %s" % (round(time.time() - start_time, 2), answer,))
     exit(0)

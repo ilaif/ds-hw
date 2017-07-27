@@ -8,15 +8,17 @@ import time
 
 
 def map_fn(k, v):
-    d = v.split("->")
-    vertex = d[0].strip()
-    neighbours = set(d[1].strip().split(" "))
-    print("map", vertex, neighbours)
-    yield vertex, len(neighbours)
+    yield 1, 1
 
 
 def reduce_fn(k, v):
-    return v
+    return sum(v)
+
+
+def map_fn_2(k, v):
+    d = v.split("->")
+    neighbours = set(d[1].strip().split(" "))
+    yield len(neighbours), 1
 
 
 def run_workers(n=1):
@@ -60,13 +62,13 @@ if __name__ == '__main__':
     # Run
     start_time = time.time()
     run_workers(n=CONCURRENCY)
+    num_vertices = run_server(s)[1]
+
+    s.mapfn = map_fn_2
+    s.datasource = dict(enumerate(data))
+    run_workers(n=CONCURRENCY)
     results = run_server(s)
-    num_vertices = len(results.keys())
-    is_full_clique = True
-    for vertex, num_neighbours in results.items():
-        num_neighbours = num_neighbours[0]
-        if num_neighbours < num_vertices - 1:
-            is_full_clique = False
+    is_full_clique = True if num_vertices - 1 in results and results[num_vertices - 1] == num_vertices else False
 
     print("Finished. Is Full Clique: %s, Elapsed Time: %s secs" % (is_full_clique, round(time.time() - start_time, 2)))
     exit(0)
